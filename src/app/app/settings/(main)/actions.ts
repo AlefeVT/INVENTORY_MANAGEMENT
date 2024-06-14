@@ -2,7 +2,7 @@
 
 import { z } from 'zod'
 import { updateProfileSchema } from './schema'
-import { prisma } from '@/services/database'
+import { prisma } from '@/app/api/database/prisma'
 
 export async function updateProfile(
   input: z.infer<typeof updateProfileSchema>,
