@@ -1,8 +1,8 @@
 import { BarChartIcon, CalendarIcon } from "@radix-ui/react-icons"
-import { LuPiggyBank } from "react-icons/lu";
+import { AiOutlineStock } from "react-icons/ai";
 import { IoMdNotificationsOutline } from "react-icons/io";
-import { AiOutlineFileSync } from "react-icons/ai";
-import { LuShieldCheck } from "react-icons/lu";
+import { AiOutlineSync } from "react-icons/ai";
+import { MdOutlineSecurity } from "react-icons/md";
 
 export function LandingPageAbout() {
     return (
@@ -14,55 +14,55 @@ export function LandingPageAbout() {
                             Recursos e Funcionalidades
                         </div>
                         <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
-                            Tudo que você precisa para controlar suas finanças
+                            Tudo que você precisa para gerenciar seu estoque
                         </h2>
                         <p className="max-w-[900px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed dark:text-gray-400">
-                            Nosso sistema de controle financeiro pessoal oferece uma variedade de recursos para te ajudar a
-                            gerenciar seu dinheiro de forma eficiente.
+                            Nosso sistema de controle de estoque oferece uma variedade de recursos para te ajudar a
+                            gerenciar seu inventário de forma eficiente.
                         </p>
                     </div>
                 </div>
                 <div className="mx-auto grid items-start gap-8 sm:max-w-4xl sm:grid-cols-2 md:gap-12 lg:max-w-5xl lg:grid-cols-3">
                     <div className="grid gap-1">
                         <CalendarIcon className="h-8 w-8 text-gray-500 dark:text-gray-400" />
-                        <h3 className="text-lg font-bold">Controle de Receitas e Despesas</h3>
+                        <h3 className="text-lg font-bold">Registro de Entrada e Saída</h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Registre suas receitas e despesas de forma fácil e intuitiva.
+                            Registre as entradas e saídas de produtos de forma fácil e intuitiva.
                         </p>
                     </div>
                     <div className="grid gap-1">
                         <BarChartIcon className="h-8 w-8 text-gray-500 dark:text-gray-400" />
                         <h3 className="text-lg font-bold">Relatórios e Gráficos</h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Visualize seus dados financeiros em gráficos e relatórios personalizados.
+                            Visualize seu inventário em gráficos e relatórios personalizados.
                         </p>
                     </div>
                     <div className="grid gap-1">
-                        <LuPiggyBank className="h-8 w-8 text-gray-500 dark:text-gray-400" />
-                        <h3 className="text-lg font-bold">Metas de Poupança</h3>
+                        <AiOutlineStock className="h-8 w-8 text-gray-500 dark:text-gray-400" />
+                        <h3 className="text-lg font-bold">Gerenciamento de Produtos</h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Defina metas de poupança e acompanhe seu progresso.
+                            Organize e gerencie seus produtos com facilidade.
                         </p>
                     </div>
                     <div className="grid gap-1">
                         <IoMdNotificationsOutline className="h-8 w-8 text-gray-500 dark:text-gray-400" />
                         <h3 className="text-lg font-bold">Alertas e Notificações</h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Receba alertas sobre gastos, prazos de pagamento e metas atingidas.
+                            Receba alertas sobre níveis baixos de estoque, vencimentos e mais.
                         </p>
                     </div>
                     <div className="grid gap-1">
-                        <AiOutlineFileSync className="h-8 w-8 text-gray-500 dark:text-gray-400" />
+                        <AiOutlineSync className="h-8 w-8 text-gray-500 dark:text-gray-400" />
                         <h3 className="text-lg font-bold">Sincronização Automática</h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Sincronize suas contas bancárias e cartões de crédito para um registro automático de transações.
+                            Sincronize seu inventário com outros sistemas de gestão.
                         </p>
                     </div>
                     <div className="grid gap-1">
-                        <LuShieldCheck className="h-8 w-8 text-gray-500 dark:text-gray-400" />
+                        <MdOutlineSecurity className="h-8 w-8 text-gray-500 dark:text-gray-400" />
                         <h3 className="text-lg font-bold">Segurança e Privacidade</h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Seus dados financeiros são protegidos com criptografia e armazenados de forma segura.
+                            Seus dados de inventário são protegidos com criptografia e armazenados de forma segura.
                         </p>
                     </div>
                 </div>
