@@ -1,142 +1,180 @@
 "use client";
-import React, { useState } from 'react';
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { createCategory, getCategorys, updateCategory } from './actions';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from "@/components/ui/alert-dialog";
+import Link from 'next/link';
+import { Category } from '@/types/category';
+import CategoryForm from './_components/form';
+import CategoryTable from './_components/table';
+
+const initialFormData: Category = {
+  name: "",
+  priority: "",
+  description: "",
+  isActive: true,
+};
 
 export default function Page() {
-  const [categoryName, setCategoryName] = useState('');
-  const [categoryDescription, setCategoryDescription] = useState('');
-  const [isActive, setIsActive] = useState(true);
-  const [editIndex, setEditIndex] = useState<number | null>(null);
-  const [categories, setCategories] = useState<{ name: string; description: string; isActive: boolean; createdAt: string; updatedAt: string }[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [formData, setFormData] = useState<Category>(initialFormData);
+  const [categoryList, setCategoryList] = useState<Category[]>([]);
+  const [editingIndex, setEditingIndex] = useState<string | null>(null);
+  const [showAlertDialog, setShowAlertDialog] = useState(false);
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
-  const handleSave = () => {
-    if (editIndex !== null) {
-      const updatedCategories = [...categories];
-      updatedCategories[editIndex] = {
-        ...updatedCategories[editIndex],
-        name: categoryName,
-        description: categoryDescription,
-        isActive,
-        updatedAt: new Date().toLocaleString(),
-      };
-      setCategories(updatedCategories);
-      setEditIndex(null);
-    } else {
-      const newCategory = {
-        name: categoryName,
-        description: categoryDescription,
-        isActive,
-        createdAt: new Date().toLocaleString(),
-        updatedAt: new Date().toLocaleString()
-      };
-      setCategories([...categories, newCategory]);
+  useEffect(() => {
+    fetchCategories();
+    const categoryParam = searchParams.get('Category');
+    if (categoryParam) {
+      const category = JSON.parse(decodeURIComponent(categoryParam));
+      setFormData({ ...category });
+      setEditingIndex(category.id);
     }
-    setCategoryName('');
-    setCategoryDescription('');
-    setIsActive(true);
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      const fetchedCategories = await getCategorys();
+      const formattedCategorys = fetchedCategories.map((category: any) => ({
+        ...category,
+        name: category.name || "",
+        priority: category.priority || "",
+        description: category.description || ""
+      }));
+      setCategories(formattedCategorys);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      toast.error("Erro ao buscar categorias.");
+    }
   };
 
-  const handleEdit = (index: number) => {
-    const category = categories[index];
-    setCategoryName(category.name);
-    setCategoryDescription(category.description);
-    setIsActive(category.isActive);
-    setEditIndex(index);
+  const handleAddCategoryToList = () => {
+    const { name, priority, description } = formData;
+    if (!name || !priority || !description) {
+      toast.error("Por favor, preencha todos os campos obrigatórios.");
+      return;
+    }
+
+    const existsInList = categoryList.some((category: Category) =>
+      category.name === name
+    );
+
+    const existsInDatabase = categories.some((category: Category) =>
+      category.name === name 
+    );
+
+    if (existsInList || existsInDatabase) {
+      toast.error("Categoria com mesmo nome já existe.");
+      return;
+    }
+
+    setCategoryList([...categoryList, formData]);
+    resetFormData();
+    toast.success("Categoria adicionada à lista.");
   };
 
-  const handleToggleActive = (index: number) => {
-    const updatedCategories = [...categories];
-    updatedCategories[index].isActive = !updatedCategories[index].isActive;
-    updatedCategories[index].updatedAt = new Date().toLocaleString();
-    setCategories(updatedCategories);
+  const handleSaveCategories = async () => {
+    if (categoryList.length === 0) {
+      toast.error("Nenhuma categoria na lista para salvar.");
+      return;
+    }
+
+    try {
+      for (const category of categoryList) {
+        await createCategory(category);
+      }
+      fetchCategories();
+      setCategoryList([]);
+      toast.success("Categorias salvas com sucesso.");
+    } catch (error) {
+      console.error("Error adding categories:", error);
+      toast.error("Erro ao salvar categorias.");
+    }
   };
 
-  const filteredCategories = categories.filter(category =>
-    category.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleRemoveCategoryFromList = (index: number) => {
+    const updatedList = categoryList.filter((_, i) => i !== index);
+    setCategoryList(updatedList);
+    toast.success("Categoria removida da lista.");
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { id, value, type } = e.target;
+    setFormData({
+      ...formData,
+      [id]: type === 'number' ? Number(value) : value
+    });
+  };
+
+  const handleSwitchChange = (checked: boolean) => {
+    setFormData({ ...formData, isActive: checked });
+  };
+
+  const handleSubmitEdit = () => {
+    setShowAlertDialog(true);
+  };
+
+  const handleConfirmEdit = async () => {
+    if (editingIndex !== null) {
+      try {
+        await updateCategory(editingIndex, formData);
+        setShowAlertDialog(false);
+        toast.success("Categoria editada com sucesso.");
+        router.push('/app/listing/categories');
+      } catch (error) {
+        console.error("Error updating category:", error);
+        toast.error("Erro ao editar categoria.");
+      }
+    }
+  };
+
+  const resetFormData = () => {
+    setFormData(initialFormData);
+  };
 
   return (
     <div className="max-w-7xl mx-auto my-8 p-6 bg-white rounded-md shadow">
-      <h1 className="text-2xl font-semibold mb-6">Cadastro de Categoria de Produtos</h1>
-      <div className="flex flex-col space-y-4 mb-6">
-        <div className="flex flex-col">
-          <Label htmlFor="categoryName">Nome da Categoria*</Label>
-          <Input
-            id="categoryName"
-            value={categoryName}
-            onChange={(e) => setCategoryName(e.target.value)}
-            placeholder="Nome da categoria"
-          />
-        </div>
-        <div className="flex flex-col">
-          <Label htmlFor="categoryDescription">Descrição</Label>
-          <Textarea
-            id="categoryDescription"
-            value={categoryDescription}
-            onChange={(e) => setCategoryDescription(e.target.value)}
-            placeholder="Descrição da categoria"
-          />
-        </div>
-        <div className="flex items-center">
-          <Label htmlFor="isActive" className="mr-4">Ativo</Label>
-          <Switch 
-            id="isActive" 
-            checked={isActive} 
-            onCheckedChange={(checked) => setIsActive(checked)} 
-          />
-        </div>
-        <div className="flex justify-end mt-4">
-          <Button onClick={handleSave}>{editIndex !== null ? 'Atualizar Categoria' : 'Salvar Categoria'}</Button>
-        </div>
+      <ToastContainer />
+      <CategoryForm formData={formData} onChange={handleChange} onSwitchChange={handleSwitchChange} />
+      <div className="flex justify-end mb-6">
+        <Button variant="secondary" onClick={editingIndex !== null ? handleSubmitEdit : handleAddCategoryToList}>
+          {editingIndex !== null ? "Editar Categoria" : "Adicionar à Lista"}
+        </Button>
       </div>
-      <div className="mb-6">
-        <Label htmlFor="search">Pesquisar Categorias</Label>
-        <Input
-          id="search"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Pesquisar categorias"
-        />
+      <CategoryTable categoryList={categoryList} onRemoveCategory={handleRemoveCategoryFromList} />
+      <div className="flex justify-between items-center mt-6">
+        <Link href={'/app/listing/categories'} className='hover:bg-gray-100'>Ir para menu de Listagem de Categorias</Link>
+        <Button onClick={handleSaveCategories}>Salvar Categorias</Button>
       </div>
-      <div className="overflow-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>#</TableHead>
-              <TableHead>Nome</TableHead>
-              <TableHead>Descrição</TableHead>
-              <TableHead>Ativo</TableHead>
-              <TableHead>Criado em</TableHead>
-              <TableHead>Atualizado em</TableHead>
-              <TableHead>Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredCategories.map((category, index) => (
-              <TableRow key={index}>
-                <TableCell>{index + 1}</TableCell>
-                <TableCell>{category.name}</TableCell>
-                <TableCell>{category.description}</TableCell>
-                <TableCell>{category.isActive ? 'Sim' : 'Não'}</TableCell>
-                <TableCell>{category.createdAt}</TableCell>
-                <TableCell>{category.updatedAt}</TableCell>
-                <TableCell>
-                  <Button onClick={() => handleEdit(index)} className="mr-2">Editar</Button>
-                  <Button onClick={() => handleToggleActive(index)}>
-                    {category.isActive ? 'Desativar' : 'Ativar'}
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      {showAlertDialog && (
+        <AlertDialog open={showAlertDialog} onOpenChange={setShowAlertDialog}>
+          <AlertDialogTrigger asChild>
+            <Button className="hidden">Open</Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Atenção</AlertDialogTitle>
+              <AlertDialogDescription>
+                Você está prestes a editar os dados dessa categoria.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="flex justify-end space-x-4">
+              <AlertDialogCancel asChild>
+                <Button onClick={() => setShowAlertDialog(false)} className='text-black'>Cancelar</Button>
+              </AlertDialogCancel>
+              <AlertDialogAction asChild>
+                <Button onClick={handleConfirmEdit}>Confirmar</Button>
+              </AlertDialogAction>
+            </div>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 }
