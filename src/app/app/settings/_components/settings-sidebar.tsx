@@ -31,13 +31,6 @@ export function SettingsSidebar() {
             Aparência
           </DashboardSidebarNavLink>
 
-          {/* <DashboardSidebarNavLink
-            href="/app/settings/billing"
-            active={isActive('/app/settings/billing')}
-            className='px-4'
-          >
-            Faturamento
-          </DashboardSidebarNavLink> */}
           </main>
 
       </DashboardSidebarNav>
