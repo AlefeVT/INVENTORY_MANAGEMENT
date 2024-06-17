@@ -126,13 +126,6 @@ export function Sidebar() {
               </button>
               {productsDropdownOpen && (
                 <div className="ml-6 mt-2 space-y-2">
-                  <DashboardSidebarNavLink
-                    href="/app/products"
-                    active={isActive("/app/products")}
-                  >
-                    <FaBoxesPacking className="w-4 h-4 mr-3" />
-                    Entrada de produtos
-                  </DashboardSidebarNavLink>
 
                   <DashboardSidebarNavLink
                     href="/app/category"

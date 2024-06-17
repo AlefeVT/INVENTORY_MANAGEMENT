@@ -1,10 +1,11 @@
 import CredentialsProvider from "next-auth/providers/credentials";
-import bcrypt from 'bcrypt'
+import bcrypt from 'bcrypt';
 import { prisma } from "../../database/prisma";
-import NextAuth, { Session, User } from "next-auth";
+import NextAuth from "next-auth";
+import { AuthOptions, Session, User } from "next-auth";
 import { JWT } from "next-auth/jwt";
 
-export const authOptions = {
+export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -13,23 +14,21 @@ export const authOptions = {
         password: { label: "Password", type: "password", placeholder: "*****" },
       },
       async authorize(credentials, req) {
-        console.log(credentials)
-
-        if(!credentials) {
-            return null;
+        if (!credentials) {
+          return null;
         }
 
         const userFound = await prisma.user.findUnique({
-            where: {
-                email: credentials.email
-            }
-        })
+          where: {
+            email: credentials.email
+          }
+        });
 
-        if (!userFound) throw new Error('No user found')
+        if (!userFound) throw new Error('No user found');
 
-        const matchPassword = await bcrypt.compare(credentials.password, userFound.password)
+        const matchPassword = await bcrypt.compare(credentials.password, userFound.password);
 
-        if (!matchPassword) throw new Error('Wrong password')
+        if (!matchPassword) throw new Error('Wrong password');
 
         const session = await prisma.session.create({
           data: {
@@ -40,18 +39,21 @@ export const authOptions = {
         });
 
         return {
-            id: userFound.id,
-            name: userFound.name,
-            email: userFound.email,
-            sessionToken: session.sessionToken 
-        }
+          id: userFound.id,
+          name: userFound.name,
+          email: userFound.email,
+          sessionToken: session.sessionToken 
+        };
       },
     }),
   ],
   pages: {
-    signIn: "auth/login"
+    signIn: "/auth/login"
   },
   secret: process.env.NEXT_PUBLIC_NEXTAUTH_SECRET,
+  session: {
+    strategy: "jwt",
+  },
   callbacks: {
     async session({ session, token }: { session: Session; token: JWT }) {
       if (token) {

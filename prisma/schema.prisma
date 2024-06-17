@@ -38,3 +38,11 @@ model Product {
   description String?
   isActive    Boolean  @default(true)
 }
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  priority    String
+  description String?
+  isActive    Boolean  @default(true)
+}
