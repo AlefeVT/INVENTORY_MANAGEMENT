@@ -53,13 +53,6 @@ export function UserDropDown({ user }: UserDropDownProps) {
             </DropdownMenuItem>
           </Link>
 
-          <Link href="/app/settings/billing">
-            <DropdownMenuItem>
-              <RocketIcon className="w-3 h-3 mr-3" />
-              Upgrade
-            </DropdownMenuItem>
-          </Link>
-
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => signOut()}>
