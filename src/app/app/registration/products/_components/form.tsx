@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Product } from '@/types/product';
+import { getCategorys } from '../../category/actions';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getSuppliers } from '../../supplier/actions';
 
 interface ProductFormProps {
   formData: Product;
@@ -12,11 +15,53 @@ interface ProductFormProps {
 }
 
 const ProductForm: React.FC<ProductFormProps> = ({ formData, onChange, onSwitchChange }) => {
+  const [categories, setCategories] = useState<any[]>([]);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await getCategorys();
+        setCategories(data);
+      } catch (error) {
+        console.error("Erro ao carregar categorias:", error);
+      }
+    };
+
+    const fetchSuppliers = async () => {
+      try {
+        const data = await getSuppliers();
+        setSuppliers(data);
+      } catch (error) {
+        console.error("Erro ao carregar fornecedores:", error);
+      }
+    };
+
+    fetchCategories();
+    fetchSuppliers();
+  }, []);
+
+
+
   return (
     <div className="grid grid-cols-3 gap-6 mb-6">
       <div className="flex flex-col">
-        <Label htmlFor="supplier">Fornecedor*</Label>
-        <Input id="supplier" value={formData.supplier} onChange={onChange} placeholder="Nome do fornecedor" />
+        <Label htmlFor="supplierId">Fornecedor*</Label>
+        <Select onValueChange={(value) => onChange({ target: { id: 'supplierId', value } })}>
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione o fornecedor" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value={null}>Selecione um fornecedor</SelectItem> 
+              {suppliers.map((supplier) => (
+                <SelectItem key={supplier.id} value={supplier.id}>
+                  {supplier.name}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
       </div>
       <div className="flex flex-col">
         <Label htmlFor="name">Nome do Produto*</Label>
@@ -27,8 +72,22 @@ const ProductForm: React.FC<ProductFormProps> = ({ formData, onChange, onSwitchC
         <Input id="quantity" type="number" value={formData.quantity} onChange={onChange} placeholder="0" />
       </div>
       <div className="flex flex-col">
-        <Label htmlFor="category">Categoria*</Label>
-        <Input id="category" value={formData.category} onChange={onChange} placeholder="Categoria do produto" />
+        <Label htmlFor="categoryId">Categoria*</Label>
+        <Select onValueChange={(value) => onChange({ target: { id: 'categoryId', value } })}>
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione a categoria" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value={null}>Selecione uma categoria</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
       </div>
       <div className="flex flex-col">
         <Label htmlFor="price">Preço*</Label>

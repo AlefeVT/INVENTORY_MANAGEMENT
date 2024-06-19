@@ -1,158 +1,202 @@
 "use client";
-import React, { useState } from 'react';
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { createSupplier, getSuppliers, updateSupplier } from './actions'; 
+import { useRouter, useSearchParams } from 'next/navigation';
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from "@/components/ui/alert-dialog";
+import Link from 'next/link';
+import { Supplier } from '@/types/supplier'; 
+import SupplierForm from './_components/form'; 
+import SupplierTable from './_components/table'; 
+
+const initialFormData: Supplier = {
+  id: '',
+  name: "",
+  corporateName: "",
+  cnpjCpf: "",
+  supplierType: "pessoa_fisica", 
+  telephone: "",
+  cellphone: "",
+  email: "",
+  website: "",
+  notes: "",
+  isActive: true,
+  createdAt: new Date(), 
+  updatedAt: new Date(), 
+};
 
 export default function Page() {
-  const [supplierName, setSupplierName] = useState('');
-  const [supplierDescription, setSupplierDescription] = useState('');
-  const [contactInfo, setContactInfo] = useState('');
-  const [isActive, setIsActive] = useState(true);
-  const [editIndex, setEditIndex] = useState<number | null>(null);
-  const [suppliers, setSuppliers] = useState<{ name: string; description: string; contactInfo: string; isActive: boolean; createdAt: string; updatedAt: string }[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [formData, setFormData] = useState<Supplier>(initialFormData);
+  const [supplierList, setSupplierList] = useState<Supplier[]>([]); 
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [showAlertDialog, setShowAlertDialog] = useState(false);
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
-  const handleSave = () => {
-    if (editIndex !== null) {
-      const updatedSuppliers = [...suppliers];
-      updatedSuppliers[editIndex] = {
-        ...updatedSuppliers[editIndex],
-        name: supplierName,
-        description: supplierDescription,
-        contactInfo,
-        isActive,
-        updatedAt: new Date().toLocaleString(),
-      };
-      setSuppliers(updatedSuppliers);
-      setEditIndex(null);
-    } else {
-      const newSupplier = {
-        name: supplierName,
-        description: supplierDescription,
-        contactInfo,
-        isActive,
-        createdAt: new Date().toLocaleString(),
-        updatedAt: new Date().toLocaleString()
-      };
-      setSuppliers([...suppliers, newSupplier]);
+  useEffect(() => {
+    fetchSuppliers();
+    const supplierParam = searchParams.get('supplier');
+    if (supplierParam) {
+      const supplier = JSON.parse(decodeURIComponent(supplierParam));
+      setFormData({ ...supplier });
+      setEditingIndex(supplier.id);
     }
-    setSupplierName('');
-    setSupplierDescription('');
-    setContactInfo('');
-    setIsActive(true);
+  }, []);
+
+  const fetchSuppliers = async () => {
+    try {
+      const fetchedSuppliers = await getSuppliers(); 
+      setSuppliers(fetchedSuppliers);
+    } catch (error) {
+      console.error("Erro ao buscar fornecedores:", error);
+      toast.error("Erro ao buscar fornecedores.");
+    }
   };
 
-  const handleEdit = (index: number) => {
-    const supplier = suppliers[index];
-    setSupplierName(supplier.name);
-    setSupplierDescription(supplier.description);
-    setContactInfo(supplier.contactInfo);
-    setIsActive(supplier.isActive);
-    setEditIndex(index);
+  const handleAddSupplierToList = () => {
+    const { name, cnpjCpf, supplierType } = formData;
+    if (!name || !cnpjCpf || !supplierType) {
+      toast.error("Por favor, preencha todos os campos obrigatórios.");
+      return;
+    }
+
+    const existsInList = supplierList.some((supplier: Supplier) =>
+      supplier.cnpjCpf === cnpjCpf 
+    );
+
+    const existsInDatabase = suppliers.some((supplier: Supplier) =>
+      supplier.cnpjCpf === cnpjCpf 
+    );
+
+    if (existsInList || existsInDatabase) {
+      toast.error("Fornecedor com mesmo CNPJ/CPF já existe.");
+      return;
+    }
+
+    setSupplierList([...supplierList, formData]); 
+    resetFormData();
+    toast.success("Fornecedor adicionado à lista.");
   };
 
-  const handleToggleActive = (index: number) => {
-    const updatedSuppliers = [...suppliers];
-    updatedSuppliers[index].isActive = !updatedSuppliers[index].isActive;
-    updatedSuppliers[index].updatedAt = new Date().toLocaleString();
-    setSuppliers(updatedSuppliers);
+  const handleSaveSuppliers = async () => {
+    if (supplierList.length === 0) {
+      toast.error("Nenhum fornecedor na lista para salvar.");
+      return;
+    }
+
+    try {
+      for (const supplier of supplierList) {
+        await createSupplier(supplier); 
+      }
+      fetchSuppliers(); 
+      setSupplierList([]); 
+      toast.success("Fornecedores salvos com sucesso.");
+    } catch (error) {
+      console.error("Erro ao salvar fornecedores:", error);
+      toast.error("Erro ao salvar fornecedores.");
+    }
   };
 
-  const filteredSuppliers = suppliers.filter(supplier =>
-    supplier.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleRemoveSupplierFromList = (index: number) => {
+    const updatedList = supplierList.filter((_, i) => i !== index);
+    setSupplierList(updatedList);
+    toast.success("Fornecedor removido da lista.");
+  };
+
+ const handleEditSupplier = (index: number) => {
+    setEditingIndex(index);
+    setFormData(supplierList[index]);
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { id, value, type } = e.target;
+    setFormData({
+      ...formData,
+      [id]: type === 'number' ? Number(value) : value,
+    });
+  };
+
+  const handleSwitchChange = (checked: boolean) => {
+    setFormData({ ...formData, isActive: checked });
+  };
+
+  const handleSubmitEdit = () => {
+    setShowAlertDialog(true);
+  };
+
+  const handleConfirmEdit = async () => {
+    if (editingIndex !== null) {
+      try {
+        await updateSupplier(formData.id, formData); 
+        setShowAlertDialog(false);
+        toast.success("Fornecedor editado com sucesso.");
+        router.push('/app/listing/supplier'); 
+        setEditingIndex(null); 
+        resetFormData(); 
+      } catch (error) {
+        console.error("Erro ao editar fornecedor:", error);
+        toast.error("Erro ao editar fornecedor.");
+      }
+    }
+  };
+
+  const resetFormData = () => {
+    setFormData(initialFormData);
+  };
 
   return (
-    <div className="max-w-7xl mx-auto my-8 p-6 bg-white rounded-md shadow">
-      <h1 className="text-2xl font-semibold mb-6">Cadastro de Fornecedores</h1>
-      <div className="flex flex-col space-y-4 mb-6">
-        <div className="flex flex-col">
-          <Label htmlFor="supplierName">Nome do Fornecedor*</Label>
-          <Input
-            id="supplierName"
-            value={supplierName}
-            onChange={(e) => setSupplierName(e.target.value)}
-            placeholder="Nome do fornecedor"
-          />
-        </div>
-        <div className="flex flex-col">
-          <Label htmlFor="supplierDescription">Descrição</Label>
-          <Textarea
-            id="supplierDescription"
-            value={supplierDescription}
-            onChange={(e) => setSupplierDescription(e.target.value)}
-            placeholder="Descrição do fornecedor"
-          />
-        </div>
-        <div className="flex flex-col">
-          <Label htmlFor="contactInfo">Informações de Contato*</Label>
-          <Input
-            id="contactInfo"
-            value={contactInfo}
-            onChange={(e) => setContactInfo(e.target.value)}
-            placeholder="Informações de contato"
-          />
-        </div>
-        <div className="flex items-center">
-          <Label htmlFor="isActive" className="mr-4">Ativo</Label>
-          <Switch 
-            id="isActive" 
-            checked={isActive} 
-            onCheckedChange={(checked) => setIsActive(checked)} 
-          />
-        </div>
-        <div className="flex justify-end mt-4">
-          <Button onClick={handleSave}>{editIndex !== null ? 'Atualizar Fornecedor' : 'Salvar Fornecedor'}</Button>
-        </div>
+    <div className="bg-white rounded-md p-6 shadow overflow-y-auto h-screen">
+      <div className='mb-40'>
+      <ToastContainer />
+      <h2 className="text-2xl font-bold mb-6">
+        {editingIndex !== null ? 'Editar Fornecedor' : 'Cadastrar Fornecedor'}
+      </h2>
+      <SupplierForm formData={formData} onChange={handleChange} onSwitchChange={handleSwitchChange} />
+      <div className="flex justify-end mb-6">
+        <Button variant="secondary" onClick={editingIndex !== null ? handleSubmitEdit : handleAddSupplierToList}>
+          {editingIndex !== null ? "Editar Fornecedor" : "Adicionar à Lista"}
+        </Button>
       </div>
-      <div className="mb-6">
-        <Label htmlFor="search">Pesquisar Fornecedores</Label>
-        <Input
-          id="search"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Pesquisar fornecedores"
+      {!editingIndex && (
+        <SupplierTable
+          supplierList={supplierList}
+          onRemoveSupplier={handleRemoveSupplierFromList}
+          onEditSupplier={handleEditSupplier}
         />
+      )}
+      <div className="flex justify-between items-center mt-6">
+        <Link href={'/app/listing/supplier'} className='hover:bg-gray-100'>Ir para menu de Cadastro de Fornecedores</Link> 
+        <Button onClick={handleSaveSuppliers}>Salvar Fornecedores</Button>
       </div>
-      <div className="overflow-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>#</TableHead>
-              <TableHead>Nome</TableHead>
-              <TableHead>Descrição</TableHead>
-              <TableHead>Contato</TableHead>
-              <TableHead>Ativo</TableHead>
-              <TableHead>Criado em</TableHead>
-              <TableHead>Atualizado em</TableHead>
-              <TableHead>Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredSuppliers.map((supplier, index) => (
-              <TableRow key={index}>
-                <TableCell>{index + 1}</TableCell>
-                <TableCell>{supplier.name}</TableCell>
-                <TableCell>{supplier.description}</TableCell>
-                <TableCell>{supplier.contactInfo}</TableCell>
-                <TableCell>{supplier.isActive ? 'Sim' : 'Não'}</TableCell>
-                <TableCell>{supplier.createdAt}</TableCell>
-                <TableCell>{supplier.updatedAt}</TableCell>
-                <TableCell>
-                  <Button onClick={() => handleEdit(index)} className="mr-2">Editar</Button>
-                  <Button onClick={() => handleToggleActive(index)}>
-                    {supplier.isActive ? 'Desativar' : 'Ativar'}
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+      {showAlertDialog && (
+        <AlertDialog open={showAlertDialog} onOpenChange={setShowAlertDialog}>
+          <AlertDialogTrigger asChild>
+            <Button className="hidden">Open</Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Atenção</AlertDialogTitle>
+              <AlertDialogDescription>
+                Você está prestes a editar os dados desse fornecedor.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="flex justify-end space-x-4">
+              <AlertDialogCancel asChild>
+                <Button onClick={() => setShowAlertDialog(false)} className='text-black'>Cancelar</Button>
+              </AlertDialogCancel>
+              <AlertDialogAction asChild>
+                <Button onClick={handleConfirmEdit}>Confirmar</Button>
+              </AlertDialogAction>
+            </div>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
       </div>
+
     </div>
   );
 }

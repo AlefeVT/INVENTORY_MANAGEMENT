@@ -6,28 +6,28 @@ import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { getProducts, updateProduct } from '../../registration/products/actions';
 import { useRouter } from 'next/navigation';
 import { BiLoaderCircle } from "react-icons/bi";
+import { getSuppliers, updateSupplier } from '../../registration/supplier/actions';
 
 export default function Page() {
-  const [products, setProducts] = useState<any[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
+  const [Supplier, setSupplier] = useState<any[]>([]);
+  const [filteredSupplier, setFilteredSupplier] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchProducts = async () => {
+  const fetchSupplier = async () => {
     try {
       setIsLoading(true); 
-      const products = await getProducts();
-      setProducts(products);
-      setFilteredProducts(products);
+      const Supplier = await getSuppliers();
+      setSupplier(Supplier);
+      setFilteredSupplier(Supplier);
       setIsLoading(false);
     } catch (error) {
-      console.error("Error fetching products:", error);
+      console.error("Error fetching Supplier:", error);
       toast.error("Erro ao buscar produtos.");
     }
   };
@@ -35,38 +35,38 @@ export default function Page() {
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const term = e.target.value.toLowerCase();
     setSearchTerm(term);
-    const filtered = products.filter(product =>
-      product.name.toLowerCase().includes(term) ||
-      product.category.toLowerCase().includes(term) ||
-      product.supplier.toLowerCase().includes(term)
+    const filtered = Supplier.filter(supplier =>
+      supplier.name.toLowerCase().includes(term) ||
+      supplier.category.toLowerCase().includes(term) ||
+      supplier.supplier.toLowerCase().includes(term)
     );
-    setFilteredProducts(filtered);
+    setFilteredSupplier(filtered);
     setCurrentPage(1);
   };
 
-  const handleEditProduct = (product: any) => {
-    const productString = JSON.stringify(product);
-    const params = new URLSearchParams({ product: productString }).toString();
-    router.push(`/app/registration/products?${params}`);
+  const handleEditsupplier = (supplier: any) => {
+    const Suppliertring = JSON.stringify(supplier);
+    const params = new URLSearchParams({ supplier: Suppliertring }).toString();
+    router.push(`/app/registration/supplier?${params}`);
   };
 
-  const handleToggleProductStatus = async (productId: string, isActive: boolean) => {
+  const handleToggleSuppliertatus = async (supplierId: string, isActive: boolean) => {
     try {
-      await updateProduct(productId, { isActive: !isActive });
-      fetchProducts();
-      toast.success(isActive ? "Produto inativado com sucesso." : "Produto ativado com sucesso.");
+      await updateSupplier(supplierId, { isActive: !isActive });
+      fetchSupplier();
+      toast.success(isActive ? "Fornecedor inativado com sucesso." : "Fornecedor ativado com sucesso.");
     } catch (error) {
-      console.error("Error toggling product status:", error);
-      toast.error("Erro ao alterar status do produto.");
+      console.error("Error toggling supplier status:", error);
+      toast.error("Erro ao alterar status do fornecedor.");
     }
   };
 
   useEffect(() => {
-    fetchProducts();
+    fetchSupplier();
   }, []);
 
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const paginatedProducts = filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(filteredSupplier.length / itemsPerPage);
+  const paginatedSupplier = filteredSupplier.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="max-w-7xl mx-auto my-8 p-6 bg-white rounded-md shadow">
@@ -85,29 +85,33 @@ export default function Page() {
           <TableHeader>
             <TableRow>
               <TableHead>#</TableHead>
-              <TableHead>Produto</TableHead>
-              <TableHead>Quantidade</TableHead>
-              <TableHead>Preço</TableHead>
-              <TableHead>Categoria</TableHead>
               <TableHead>Fornecedor</TableHead>
+              <TableHead>Razão Social</TableHead>
+              <TableHead>CNPJ / CPF</TableHead>
+              <TableHead>Tipo de Fornecedor</TableHead>
+              <TableHead>telefone</TableHead>
+              <TableHead>celular</TableHead>
+              <TableHead>email</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedProducts.map((product, index) => (
-              <TableRow key={product.id}>
+            {paginatedSupplier.map((supplier, index) => (
+              <TableRow key={supplier.id}>
                 <TableCell>{index + 1 + (currentPage - 1) * itemsPerPage}</TableCell>
-                <TableCell>{product.name}</TableCell>
-                <TableCell>{product.quantity}</TableCell>
-                <TableCell>{product.price}</TableCell>
-                <TableCell>{product.category}</TableCell>
-                <TableCell>{product.supplier}</TableCell>
-                <TableCell>{product.isActive ? "Ativo" : "Inativo"}</TableCell>
+                <TableCell>{supplier.name}</TableCell>
+                <TableCell>{supplier.corporateName}</TableCell>
+                <TableCell>{supplier.cnpjCpf}</TableCell>
+                <TableCell>{supplier.supplierType}</TableCell>
+                <TableCell>{supplier.telephone}</TableCell>
+                <TableCell>{supplier.cellphone}</TableCell>
+                <TableCell>{supplier.email}</TableCell>
+                <TableCell>{supplier.isActive ? "Ativo" : "Inativo"}</TableCell>
                 <TableCell>
-                  <Button onClick={() => handleEditProduct(product)} className='m-2'>Editar</Button>
-                  <Button onClick={() => handleToggleProductStatus(product.id, product.isActive)} className='m-2'>
-                    {product.isActive ? "Inativar" : "Ativar"}
+                  <Button onClick={() => handleEditsupplier(supplier)} className='m-2'>Editar</Button>
+                  <Button onClick={() => handleToggleSuppliertatus(supplier.id, supplier.isActive)} className='m-2'>
+                    {supplier.isActive ? "Inativar" : "Ativar"}
                   </Button>
                 </TableCell>
               </TableRow>
