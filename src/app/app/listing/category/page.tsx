@@ -27,7 +27,7 @@ export default function CategorysList() {
       setIsLoading(false); 
     } catch (error) {
       console.error("Error fetching Categorys:", error);
-      toast.error("Erro ao buscar produtos.");
+      toast.error("Erro ao buscar as categorias.");
     }
   };
 
@@ -43,20 +43,20 @@ export default function CategorysList() {
     setCurrentPage(1);
   };
 
-  const handleEditProduct = (product: any) => {
-    const Categorystring = JSON.stringify(product);
-  const params = new URLSearchParams({ product: Categorystring }).toString();
-  router.push(`/app/registration/Categorys?${params}`);
+  const handleEditCategory = (category: any) => {
+    const Categorystring = JSON.stringify(category);
+  const params = new URLSearchParams({ category: Categorystring }).toString();
+  router.push(`/app/registration/category?${params}`);
   };
 
-  const handleInactivateProduct = async (productId: string) => {
+  const handleToggleCategorystatus = async (categoryId: string, isActive: boolean) => {
     try {
-      await updateCategory(productId, { isActive: false });
+      await updateCategory(categoryId, { isActive: !isActive });
       fetchCategorys();
-      toast.success("Produto inativado com sucesso.");
+      toast.success(isActive ? "Categoria inativada com sucesso." : "Categoria ativada com sucesso.");
     } catch (error) {
-      console.error("Error inactivating product:", error);
-      toast.error("Erro ao inativar produto.");
+      console.error("Error toggling category status:", error);
+      toast.error("Erro ao alterar status do category.");
     }
   };
 
@@ -92,16 +92,18 @@ export default function CategorysList() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedCategorys.map((product, index) => (
-              <TableRow key={product.id}>
+            {paginatedCategorys.map((category, index) => (
+              <TableRow key={category.id}>
                 <TableCell>{index + 1 + (currentPage - 1) * itemsPerPage}</TableCell>
-                <TableCell>{product.name}</TableCell>
-                <TableCell>{product.priority}</TableCell>
-                <TableCell>{product.description}</TableCell>
-                <TableCell>{product.isActive ? "Ativo" : "Inativo"}</TableCell>
+                <TableCell>{category.name}</TableCell>
+                <TableCell>{category.priority}</TableCell>
+                <TableCell>{category.description}</TableCell>
+                <TableCell>{category.isActive ? "Ativo" : "Inativo"}</TableCell>
                 <TableCell>
-                  <Button onClick={() => handleEditProduct(product)} className='mr-4'>Editar</Button>
-                  <Button onClick={() => handleInactivateProduct(product.id)}>Inativar</Button>
+                  <Button onClick={() => handleEditCategory(category)} className='mr-4'>Editar</Button>
+                  <Button onClick={() => handleToggleCategorystatus(category.id, category.isActive)} className='m-2'>
+                    {category.isActive ? "Inativar" : "Ativar"}
+                  </Button>
                 </TableCell>
               </TableRow>
             ))}

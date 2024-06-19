@@ -9,9 +9,10 @@ import { getCategoryNameById } from '../actions';
 interface ProductTableProps {
   productList: Product[];
   onRemoveProduct: (index: number) => void;
+  onEditProduct: (index: number) => void;
 }
 
-const ProductTable: React.FC<ProductTableProps> = ({ productList, onRemoveProduct }) => {
+const ProductTable: React.FC<ProductTableProps> = ({ productList, onRemoveProduct, onEditProduct }) => {
   const [categories, setCategories] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
@@ -53,7 +54,8 @@ const ProductTable: React.FC<ProductTableProps> = ({ productList, onRemoveProduc
               <TableCell>{product.price}</TableCell>
               <TableCell>{categories[product.categoryId] || "Carregando..."}</TableCell>
               <TableCell>
-                <Button onClick={() => onRemoveProduct(index)}>Remover</Button>
+                <Button size="sm" variant="outline" onClick={() => onEditProduct(index)}>Editar</Button>
+                <Button size="sm" variant="destructive" onClick={() => onRemoveProduct(index)}>Remover</Button>
               </TableCell>
             </TableRow>
           ))}

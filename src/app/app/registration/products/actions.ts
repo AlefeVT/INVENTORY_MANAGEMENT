@@ -29,7 +29,7 @@ export const createProduct = async (productData: Product) => {
   }
 };
 
-export const updateProduct = async (id: string, updatedData: Product) => {
+export const updateProduct = async (id: string, updatedData: Partial<Product>) => {
   try {
     const updatedProduct = await prisma.product.update({
       where: { id },
@@ -73,5 +73,18 @@ export const getCategoryNameById = async (categoryId: string): Promise<string | 
   } catch (error) {
     console.error("Erro ao buscar nome da categoria:", error);
     throw error; 
+  }
+};
+
+export const getSupplierNameById = async (supplierId: string): Promise<string | null> => {
+  try {
+    const supplier = await prisma.supplier.findUnique({
+      where: { id: supplierId },
+    });
+
+    return supplier ? supplier.name : null;
+  } catch (error) {
+    console.error("Erro ao buscar nome do fornecedor:", error);
+    throw error;
   }
 };
