@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { getProducts, updateProduct } from '../../registration/products/actions';
+import { getCategoryNameById, getProducts, updateProduct, getSupplierNameById } from '../../registration/products/actions';
 import { useRouter } from 'next/navigation';
 import { BiLoaderCircle } from "react-icons/bi";
 
@@ -37,8 +37,8 @@ export default function Page() {
     setSearchTerm(term);
     const filtered = products.filter(product =>
       product.name.toLowerCase().includes(term) ||
-      product.category.toLowerCase().includes(term) ||
-      product.supplier.toLowerCase().includes(term)
+      categories[product.categoryId]?.toLowerCase().includes(term) ||
+      suppliers[product.supplierId]?.toLowerCase().includes(term)
     );
     setFilteredProducts(filtered);
     setCurrentPage(1);
@@ -67,6 +67,35 @@ export default function Page() {
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const paginatedProducts = filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const [categories, setCategories] = useState<{ [key: string]: string }>({});
+  const [suppliers, setSuppliers] = useState<{ [key: string]: string }>({});
+
+  useEffect(() => {
+    const fetchCategoriesAndSuppliers = async () => {
+      const categoriesMap: { [key: string]: string } = {};
+      const suppliersMap: { [key: string]: string } = {};
+      for (const product of products) {
+        if (!categoriesMap[product.categoryId]) {
+          const categoryName = await getCategoryNameById(product.categoryId);
+          if (categoryName) {
+            categoriesMap[product.categoryId] = categoryName;
+          }
+        }
+        if (!suppliersMap[product.supplierId]) {
+          const supplierName = await getSupplierNameById(product.supplierId);
+          if (supplierName) {
+            suppliersMap[product.supplierId] = supplierName;
+          }
+        }
+      }
+      setCategories(categoriesMap);
+      setSuppliers(suppliersMap);
+    };
+
+    if (products.length > 0) {
+      fetchCategoriesAndSuppliers();
+    }
+  }, [products]);
 
   return (
     <div className="max-w-7xl mx-auto my-8 p-6 bg-white rounded-md shadow">
@@ -101,8 +130,8 @@ export default function Page() {
                 <TableCell>{product.name}</TableCell>
                 <TableCell>{product.quantity}</TableCell>
                 <TableCell>{product.price}</TableCell>
-                <TableCell>{product.category}</TableCell>
-                <TableCell>{product.supplier}</TableCell>
+                <TableCell>{categories[product.categoryId] || "Carregando..."}</TableCell>
+                <TableCell>{suppliers[product.supplierId] || "Carregando..."}</TableCell>
                 <TableCell>{product.isActive ? "Ativo" : "Inativo"}</TableCell>
                 <TableCell>
                   <Button onClick={() => handleEditProduct(product)} className='m-2'>Editar</Button>

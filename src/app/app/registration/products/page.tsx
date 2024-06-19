@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -34,17 +34,7 @@ export default function Page() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  useEffect(() => {
-    fetchProducts();
-    const productParam = searchParams.get('product');
-    if (productParam) {
-      const product = JSON.parse(decodeURIComponent(productParam));
-      setFormData({ ...product, quantity: Number(product.quantity), price: Number(product.price) });
-      setEditingIndex(product.id);
-    }
-  }, []);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       const fetchedProducts = await getProducts();
       const formattedProducts = fetchedProducts.map((product: any) => ({
@@ -58,7 +48,20 @@ export default function Page() {
       console.error("Error fetching products:", error);
       toast.error("Erro ao buscar produtos.");
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchProducts();
+
+    const productParam = searchParams.get('product');
+    if (productParam) {
+      const product = JSON.parse(decodeURIComponent(productParam));
+      setFormData({ ...product });
+      setEditingIndex(product.id);
+    } else {
+      setEditingIndex(null);
+    }
+  }, [fetchProducts, searchParams]);
 
   const handleAddProductToList = () => {
     const { supplierId, name, quantity, categoryId, price } = formData;
@@ -111,6 +114,11 @@ export default function Page() {
     toast.success("Produto removido da lista.");
   };
 
+  const handleEditProduct = (index: number) => {
+    setEditingIndex(index.toString()); 
+    setFormData({ ...productList[index] }); 
+  };
+
   const handleChange = (e: any) => {
     const { id, value, type } = e.target;
     setFormData({
@@ -128,15 +136,30 @@ export default function Page() {
   };
 
   const handleConfirmEdit = async () => {
-    if (editingIndex !== null) {
-      try {
-        await updateProduct(editingIndex, formData);
+    const productParam = searchParams.get('product');
+
+    if (productParam) {
+      // Edit product in the database
+      if (editingIndex !== null) {
+        try {
+          await updateProduct(editingIndex, formData);
+          setShowAlertDialog(false);
+          toast.success("Produto editado com sucesso.");
+          router.push('/app/listing/products');
+        } catch (error) {
+          console.error("Error updating product:", error);
+          toast.error("Erro ao editar produto.");
+        }
+      }
+    } else {
+      // Edit product in the list
+      if (editingIndex !== null) {
+        const updatedList = productList.map((product, index) =>
+          index.toString() === editingIndex ? formData : product
+        );
+        setProductList(updatedList);
         setShowAlertDialog(false);
-        toast.success("Produto editado com sucesso.");
-        router.push('/app/listing/products');
-      } catch (error) {
-        console.error("Error updating product:", error);
-        toast.error("Erro ao editar produto.");
+        toast.success("Produto editado na lista com sucesso.");
       }
     }
   };
@@ -154,7 +177,7 @@ export default function Page() {
           {editingIndex !== null ? "Editar Produto" : "Adicionar à Lista Quantitativa"}
         </Button>
       </div>
-      <ProductTable productList={productList} onRemoveProduct={handleRemoveProductFromList} />
+      <ProductTable productList={productList} onRemoveProduct={handleRemoveProductFromList} onEditProduct={handleEditProduct} />
       <div className="flex justify-between items-center mt-6">
         <Link href={'/app/listing/products'} className='hover:bg-gray-100'>Ir para menu de Listagem de Produtos</Link>
         <Button onClick={handleSaveProducts}>Salvar Produtos</Button>

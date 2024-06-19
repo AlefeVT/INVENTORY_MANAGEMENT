@@ -1,5 +1,6 @@
 "use server"
 import { prisma } from "@/app/api/database/prisma";
+import { Category } from "@/types/category";
 
 export const createCategory = async (CategoryData: {
   name: string;
@@ -18,16 +19,24 @@ export const createCategory = async (CategoryData: {
   }
 };
 
-export const updateCategory = async (id: string, updatedData: {
-  name?: string;
-  description?: string;
-  isActive?: boolean;
-}) => {
+export const updateCategory = async (id: string, updatedData: Partial<Category>) => {
   try {
+    const existingCategory = await prisma.category.findUnique({
+      where: { id },
+    });
+
+    if (!existingCategory) {
+      throw new Error(`Category with id ${id} not found`);
+    }
+
     const updatedCategory = await prisma.category.update({
       where: { id },
-      data: updatedData,
+      data: {
+        ...existingCategory,
+        ...updatedData,
+      },
     });
+
     return updatedCategory;
   } catch (error) {
     console.error("Error updating Category:", error);

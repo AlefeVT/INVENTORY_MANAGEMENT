@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -23,36 +23,39 @@ export default function Page() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [formData, setFormData] = useState<Category>(initialFormData);
   const [categoryList, setCategoryList] = useState<Category[]>([]);
-  const [editingIndex, setEditingIndex] = useState<string | null>(null);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [showAlertDialog, setShowAlertDialog] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  useEffect(() => {
-    fetchCategories();
-    const categoryParam = searchParams.get('Category');
-    if (categoryParam) {
-      const category = JSON.parse(decodeURIComponent(categoryParam));
-      setFormData({ ...category });
-      setEditingIndex(category.id);
-    }
-  }, []);
-
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const fetchedCategories = await getCategorys();
-      const formattedCategorys = fetchedCategories.map((category: any) => ({
+      const formattedCategories = fetchedCategories.map((category: any) => ({
         ...category,
         name: category.name || "",
         priority: category.priority || "",
         description: category.description || ""
       }));
-      setCategories(formattedCategorys);
+      setCategories(formattedCategories);
     } catch (error) {
       console.error("Error fetching categories:", error);
       toast.error("Erro ao buscar categorias.");
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchCategories();
+
+    const categoryParam = searchParams.get('category');
+    if (categoryParam) {
+      const category = JSON.parse(decodeURIComponent(categoryParam));
+      setFormData({ ...category });
+      setEditingIndex(category.id);
+    } else {
+      setEditingIndex(null);
+    }
+  }, [fetchCategories, searchParams]);
 
   const handleAddCategoryToList = () => {
     const { name, priority, description } = formData;
@@ -104,6 +107,11 @@ export default function Page() {
     toast.success("Categoria removida da lista.");
   };
 
+  const handleEditCategory = (index: number) => {
+    setEditingIndex(index); 
+    setFormData({ ...categoryList[index] }); 
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { id, value, type } = e.target;
     setFormData({
@@ -122,15 +130,27 @@ export default function Page() {
 
   const handleConfirmEdit = async () => {
     if (editingIndex !== null) {
-      try {
-        await updateCategory(editingIndex, formData);
-        setShowAlertDialog(false);
-        toast.success("Categoria editada com sucesso.");
-        router.push('/app/listing/categories');
-      } catch (error) {
-        console.error("Error updating category:", error);
-        toast.error("Erro ao editar categoria.");
+      const categoryParam = searchParams.get('category');
+      if (categoryParam) {
+        try {
+          await updateCategory(editingIndex.toString(), formData);
+          fetchCategories();
+          router.push('/app/listing/category');
+          setEditingIndex(null);
+          resetFormData();
+        } catch (error) {
+          console.error("Erro ao atualizar categoria:", error);
+          toast.error("Erro ao atualizar categoria.");
+        }
+      } else {
+        const updatedCategoryList = [...categoryList];
+        updatedCategoryList[editingIndex] = formData;
+        setCategoryList(updatedCategoryList);
+        toast.success("Categoria da lista editada com sucesso.");
       }
+      setShowAlertDialog(false);
+      setEditingIndex(null); 
+      resetFormData(); 
     }
   };
 
@@ -147,9 +167,9 @@ export default function Page() {
           {editingIndex !== null ? "Editar Categoria" : "Adicionar à Lista"}
         </Button>
       </div>
-      <CategoryTable categoryList={categoryList} onRemoveCategory={handleRemoveCategoryFromList} />
+      <CategoryTable categoryList={categoryList} onRemoveCategory={handleRemoveCategoryFromList} onEditCategory={handleEditCategory} />
       <div className="flex justify-between items-center mt-6">
-        <Link href={'/app/listing/categories'} className='hover:bg-gray-100'>Ir para menu de Listagem de Categorias</Link>
+        <Link href={'/app/listing/category'} className='hover:bg-gray-100'>Ir para menu de Listagem de Categorias</Link>
         <Button onClick={handleSaveCategories}>Salvar Categorias</Button>
       </div>
       {showAlertDialog && (

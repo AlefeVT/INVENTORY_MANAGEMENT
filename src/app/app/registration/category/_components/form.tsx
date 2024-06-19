@@ -35,6 +35,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ formData, onChange, onSwitc
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
+              <SelectItem value={null}>Prioridade de reposição</SelectItem> 
               <SelectItem value="alta">Alta</SelectItem>
               <SelectItem value="media">Média</SelectItem>
               <SelectItem value="baixa">Baixa</SelectItem>
