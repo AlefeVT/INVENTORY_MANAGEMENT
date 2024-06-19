@@ -5,24 +5,28 @@ import { Button } from "@/components/ui/button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { getProducts, updateProduct } from '../../registration/products/actions';
+import { getCategorys, updateCategory } from '../../registration/category/actions';
 import { useRouter } from 'next/navigation';
+import { BiLoaderCircle } from 'react-icons/bi';
 
-export default function ProductsList() {
-  const [products, setProducts] = useState<any[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
+export default function CategorysList() {
+  const [Categorys, setCategorys] = useState<any[]>([]);
+  const [filteredCategorys, setFilteredCategorys] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 5;
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
 
-  const fetchProducts = async () => {
+  const fetchCategorys = async () => {
     try {
-      const products = await getProducts();
-      setProducts(products);
-      setFilteredProducts(products);
+      setIsLoading(true); 
+      const Categorys = await getCategorys();
+      setCategorys(Categorys);
+      setFilteredCategorys(Categorys);
+      setIsLoading(false); 
     } catch (error) {
-      console.error("Error fetching products:", error);
+      console.error("Error fetching Categorys:", error);
       toast.error("Erro ao buscar produtos.");
     }
   };
@@ -30,25 +34,25 @@ export default function ProductsList() {
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const term = e.target.value.toLowerCase();
     setSearchTerm(term);
-    const filtered = products.filter(product =>
-      product.name.toLowerCase().includes(term) ||
-      product.category.toLowerCase().includes(term) ||
-      product.supplier.toLowerCase().includes(term)
+    const filtered = Categorys.filter(category =>
+      category.name.toLowerCase().includes(term) ||
+      category.priority.toLowerCase().includes(term) ||
+      category.description.toLowerCase().includes(term)
     );
-    setFilteredProducts(filtered);
+    setFilteredCategorys(filtered);
     setCurrentPage(1);
   };
 
   const handleEditProduct = (product: any) => {
-    const productString = JSON.stringify(product);
-  const params = new URLSearchParams({ product: productString }).toString();
-  router.push(`/app/registration/products?${params}`);
+    const Categorystring = JSON.stringify(product);
+  const params = new URLSearchParams({ product: Categorystring }).toString();
+  router.push(`/app/registration/Categorys?${params}`);
   };
 
   const handleInactivateProduct = async (productId: string) => {
     try {
-      await updateProduct(productId, { isActive: false });
-      fetchProducts();
+      await updateCategory(productId, { isActive: false });
+      fetchCategorys();
       toast.success("Produto inativado com sucesso.");
     } catch (error) {
       console.error("Error inactivating product:", error);
@@ -57,11 +61,11 @@ export default function ProductsList() {
   };
 
   useEffect(() => {
-    fetchProducts();
+    fetchCategorys();
   }, []);
 
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const paginatedProducts = filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(filteredCategorys.length / itemsPerPage);
+  const paginatedCategorys = filteredCategorys.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="max-w-7xl mx-auto my-8 p-6 bg-white rounded-md shadow">
@@ -71,31 +75,32 @@ export default function ProductsList() {
           placeholder="Buscar produtos..."
           value={searchTerm}
           onChange={handleSearch}
+          className='w-1/2'
         />
       </div>
       <div className="overflow-auto">
+      {isLoading && <div className="flex justify-center mt-4"><BiLoaderCircle size={30} className="text-gray-400 animate-spin" /></div>}
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>#</TableHead>
               <TableHead>Categoria</TableHead>
+              <TableHead>Prioridade de reposição</TableHead>
               <TableHead>Descrição</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedProducts.map((product, index) => (
+            {paginatedCategorys.map((product, index) => (
               <TableRow key={product.id}>
                 <TableCell>{index + 1 + (currentPage - 1) * itemsPerPage}</TableCell>
                 <TableCell>{product.name}</TableCell>
-                <TableCell>{product.quantity}</TableCell>
-                <TableCell>{product.price}</TableCell>
-                <TableCell>{product.category}</TableCell>
-                <TableCell>{product.supplier}</TableCell>
+                <TableCell>{product.priority}</TableCell>
+                <TableCell>{product.description}</TableCell>
                 <TableCell>{product.isActive ? "Ativo" : "Inativo"}</TableCell>
                 <TableCell>
-                  <Button onClick={() => handleEditProduct(product)}>Editar</Button>
+                  <Button onClick={() => handleEditProduct(product)} className='mr-4'>Editar</Button>
                   <Button onClick={() => handleInactivateProduct(product.id)}>Inativar</Button>
                 </TableCell>
               </TableRow>
@@ -103,7 +108,7 @@ export default function ProductsList() {
           </TableBody>
         </Table>
       </div>
-      <div className="flex justify-between mt-6">
+      <div className="flex justify-center mt-6 w-90 gap-6">
         <Button
           onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
           disabled={currentPage === 1}

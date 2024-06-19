@@ -1,7 +1,10 @@
-import React from 'react';
+"use client"
+
+import React, { useEffect, useState } from 'react';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Product } from '@/types/product';
+import { getCategoryNameById } from '../actions';
 
 interface ProductTableProps {
   productList: Product[];
@@ -9,6 +12,25 @@ interface ProductTableProps {
 }
 
 const ProductTable: React.FC<ProductTableProps> = ({ productList, onRemoveProduct }) => {
+  const [categories, setCategories] = useState<{ [key: string]: string }>({});
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const categoriesMap: { [key: string]: string } = {};
+      for (const product of productList) {
+        if (!categoriesMap[product.categoryId]) {
+          const categoryName = await getCategoryNameById(product.categoryId);
+          if (categoryName) {
+            categoriesMap[product.categoryId] = categoryName;
+          }
+        }
+      }
+      setCategories(categoriesMap);
+    };
+
+    fetchCategories();
+  }, [productList]);
+
   return (
     <div className="overflow-auto">
       <Table>
@@ -29,7 +51,7 @@ const ProductTable: React.FC<ProductTableProps> = ({ productList, onRemoveProduc
               <TableCell>{product.name}</TableCell>
               <TableCell>{product.quantity}</TableCell>
               <TableCell>{product.price}</TableCell>
-              <TableCell>{product.category}</TableCell>
+              <TableCell>{categories[product.categoryId] || "Carregando..."}</TableCell>
               <TableCell>
                 <Button onClick={() => onRemoveProduct(index)}>Remover</Button>
               </TableCell>

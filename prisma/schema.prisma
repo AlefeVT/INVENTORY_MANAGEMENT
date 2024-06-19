@@ -27,22 +27,42 @@ model User {
 }
 
 model Product {
-  id          String   @id @default(cuid())
-  supplier    String?
+  id          String    @id @default(cuid())
   name        String
   quantity    Int
-  category    String
+  categoryId  String?   @map("categoryId") 
   price       Float
   barCode     String?
   sku         String?
   description String?
-  isActive    Boolean  @default(true)
+  isActive    Boolean   @default(true)
+  supplier    Supplier? @relation(fields: [supplierId], references: [id]) 
+  supplierId  String?   @map("supplierId")  
+  category    Category? @relation(fields: [categoryId], references: [id])
 }
 
 model Category {
-  id          String   @id @default(cuid())
+  id          String     @id @default(cuid())
   name        String
   priority    String
   description String?
+  isActive    Boolean    @default(true)
+  products    Product[]  @relation
+}
+
+model Supplier {
+  id          String   @id @default(uuid())
+  name        String
+  corporateName String?
+  cnpjCpf     String
+  supplierType String
+  telephone   String?
+  cellphone   String?
+  email       String?
+  website     String?
+  notes       String?
   isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  products    Product[] @relation 
 }

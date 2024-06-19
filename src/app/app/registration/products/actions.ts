@@ -1,21 +1,27 @@
 "use server"
 import { prisma } from "@/app/api/database/prisma";
+import { Product } from "@/types/product";
 
-export const createProduct = async (productData: {
-  supplier?: string;
-  name: string;
-  quantity: number;
-  category: string;
-  price: number;
-  barCode?: string;
-  sku?: string;
-  description?: string;
-  isActive: boolean;
-}) => {
+export const createProduct = async (productData: Product) => {
   try {
+    const { id, supplierId, categoryId, ...data } = productData; 
+
     const newProduct = await prisma.product.create({
-      data: productData,
+      data: {
+        ...data,
+        supplier: { 
+          connect: { 
+            id: supplierId
+          }
+        },
+        category: { 
+          connect: { 
+            id: categoryId 
+          }
+        }
+      },
     });
+
     return newProduct;
   } catch (error) {
     console.error("Error creating product:", error);
@@ -23,17 +29,7 @@ export const createProduct = async (productData: {
   }
 };
 
-export const updateProduct = async (id: string, updatedData: {
-  supplier?: string;
-  name?: string;
-  quantity?: number;
-  category?: string;
-  price?: number;
-  barCode?: string;
-  sku?: string;
-  description?: string;
-  isActive?: boolean;
-}) => {
+export const updateProduct = async (id: string, updatedData: Product) => {
   try {
     const updatedProduct = await prisma.product.update({
       where: { id },
@@ -64,5 +60,18 @@ export const getProducts = async () => {
   } catch (error) {
     console.error("Error fetching products:", error);
     throw error;
+  }
+};
+
+export const getCategoryNameById = async (categoryId: string): Promise<string | null> => {
+  try {
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId },
+    });
+
+    return category ? category.name : null;
+  } catch (error) {
+    console.error("Erro ao buscar nome da categoria:", error);
+    throw error; 
   }
 };

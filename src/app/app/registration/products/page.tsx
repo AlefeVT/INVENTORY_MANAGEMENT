@@ -14,10 +14,10 @@ import ProductTable from './_components/table';
 
 
 const initialFormData: Product = {
-  supplier: "",
+  supplierId: "",
   name: "",
   quantity: 0,
-  category: "",
+  categoryId: "",
   price: 0,
   barCode: "",
   sku: "",
@@ -49,7 +49,6 @@ export default function Page() {
       const fetchedProducts = await getProducts();
       const formattedProducts = fetchedProducts.map((product: any) => ({
         ...product,
-        supplier: product.supplier || "",
         barCode: product.barCode || "",
         sku: product.sku || "",
         description: product.description || ""
@@ -62,18 +61,19 @@ export default function Page() {
   };
 
   const handleAddProductToList = () => {
-    const { supplier, name, quantity, category, price } = formData;
-    if (!supplier || !name || !quantity || !category || !price) {
+    const { supplierId, name, quantity, categoryId, price } = formData;
+
+    if (!supplierId || !name || !quantity || !categoryId || !price) {
       toast.error("Por favor, preencha todos os campos obrigatórios.");
       return;
     }
 
     const existsInList = productList.some((product: Product) =>
-      product.name === name && product.category === category && product.supplier === supplier
+      product.name === name && product.categoryId === categoryId && product.supplierId === supplierId
     );
 
     const existsInDatabase = products.some((product: Product) =>
-      product.name === name && product.category === category && product.supplier === supplier
+      product.name === name && product.categoryId === categoryId && product.supplierId === supplierId
     );
 
     if (existsInList || existsInDatabase) {
